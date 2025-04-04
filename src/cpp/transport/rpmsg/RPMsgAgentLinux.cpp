@@ -67,7 +67,7 @@ namespace eprosima
             {
                 for (size_t i = 0; i < len; i++)
                 {
-                    // std::this_thread::sleep_for(std::chrono::microseconds(1));
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
                     buf[i] = in_data.pt[i];
                 }
 
@@ -78,7 +78,7 @@ namespace eprosima
             {
                 for (size_t i = 0; i < len; i++)
                 {
-                    // std::this_thread::sleep_for(std::chrono::microseconds(1));
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
                     buf[i] = in_data.pt[i];
                 }
 
@@ -115,7 +115,7 @@ namespace eprosima
             {
                 for (size_t i = 0; i < in_data.len; i++)
                 {
-                    // std::this_thread::sleep_for(std::chrono::microseconds(1));
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
                     buf[i] = in_data.pt[i];
                 }
 
