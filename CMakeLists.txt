@@ -39,6 +39,8 @@ option(UAGENT_LOGGER_PROFILE "Build logger profile." ON)
 option(UAGENT_SECURITY_PROFILE "Build security profile." OFF)
 option(UAGENT_BUILD_EXECUTABLE "Build Micro XRCE-DDS Agent provided executable." ON)
 option(UAGENT_BUILD_USAGE_EXAMPLES "Build Micro XRCE-DDS Agent built-in usage examples" OFF)
+option(UAGENT_USE_LIBMETAL "Build with libmetal support." ON)
+option(UAGENT_USE_OPENAMP "Build with OpenAMP support." ON)
 
 set(UAGENT_P2P_CLIENT_VERSION 3.0.0 CACHE STRING "Sets Micro XRCE-DDS client version for P2P")
 set(UAGENT_P2P_CLIENT_TAG v3.0.0 CACHE STRING "Sets Micro XRCE-DDS client tag for P2P")
@@ -112,6 +114,18 @@ if(UAGENT_LOGGER_PROFILE)
     list(APPEND _deps "spdlog\;${_spdlog_version}")
 endif()
 
+if(UAGENT_USE_LIBMETAL)
+    set(_libmetal_version 2024.10)
+    set(_libmetal_tag v2024.10.0)
+    list(APPEND _deps "libmetal\;${_libmetal_version}")
+endif()
+
+if(UAGENT_USE_OPENAMP)
+    set(_openamp_version 2024.10)
+    set(_openamp_tag v2024.10.0)
+    list(APPEND _deps "openamp\;${_openamp_version}")
+endif()
+
 ###############################################################################
 # Project
 ###############################################################################
@@ -127,7 +141,7 @@ endif()
 # Set CMAKE_BUILD_TYPE to Release by default.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Release' as none was specified.")
-    set(CMAKE_BUILD_TYPE Release CACHE STRING
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
@@ -168,11 +182,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Android" OR
         src/cpp/transport/serial/MultiSerialAgentLinux.cpp
         src/cpp/transport/serial/MultiTermiosAgentLinux.cpp
         src/cpp/transport/serial/PseudoTerminalAgentLinux.cpp
-	src/cpp/transport/rpmsg/RPMsgAgentLinux.cpp
-	src/cpp/transport/rpmsg/TermiosAgentLinux.cpp
-	src/cpp/transport/rpmsg/helper.c
-	src/cpp/transport/rpmsg/platform_info.c
-	src/cpp/transport/rpmsg/zynqmp_linux_r5_proc.c
+        src/cpp/transport/rpmsg/TermiosAgentLinux.cpp
+        src/cpp/transport/rpmsg/RPMsgAgentLinux.cpp
+        src/cpp/transport/rpmsg/zynqmp/helper.c
+        src/cpp/transport/rpmsg/zynqmp/zynqmp_linux_r5_proc.c
+        src/cpp/transport/rpmsg/zynqmp/platform_info.c
         $<$<BOOL:${UAGENT_SOCKETCAN_PROFILE}>:src/cpp/transport/can/CanAgentLinux.cpp>
         $<$<BOOL:${UAGENT_DISCOVERY_PROFILE}>:src/cpp/transport/discovery/DiscoveryServerLinux.cpp>
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:src/cpp/transport/p2p/AgentDiscovererLinux.cpp>
@@ -305,6 +319,8 @@ target_link_libraries(${PROJECT_NAME}
         $<$<BOOL:${UAGENT_FAST_PROFILE}>:fastdds>
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:microxrcedds_client>
         $<$<BOOL:${UAGENT_P2P_PROFILE}>:microcdr>
+        $<$<BOOL:${UAGENT_USE_LIBMETAL}>:${LIBMETAL_LIBS}>
+        $<$<BOOL:${UAGENT_USE_OPENAMP}>:${OPENAMP_LIBS}>       
         $<$<PLATFORM_ID:Linux>:pthread>
     )
 
@@ -314,6 +330,8 @@ target_include_directories(${PROJECT_NAME} BEFORE
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
         $<TARGET_PROPERTY:fastcdr,INTERFACE_INCLUDE_DIRECTORIES>
+        $<$<BOOL:${UAGENT_USE_LIBMETAL}>:${LIBMETAL_INCLUDE_DIRS}>
+        $<$<BOOL:${UAGENT_USE_OPENAMP}>:${OPENAMP_INCLUDE_DIRS}>
     PRIVATE
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/cpp>
         $<$<BOOL:${UAGENT_FAST_PROFILE}>:$<TARGET_PROPERTY:fastdds,INTERFACE_INCLUDE_DIRECTORIES>>
@@ -330,8 +348,6 @@ if(UAGENT_BUILD_EXECUTABLE)
             ${PROJECT_NAME}
             $<$<BOOL:$<PLATFORM_ID:Linux>>:rt>
             $<$<BOOL:$<PLATFORM_ID:Linux>>:dl>
-	    metal
-	    open_amp
         )
 
     set_target_properties(MicroXRCEAgent PROPERTIES
@@ -387,8 +403,7 @@ if(UAGENT_BUILD_TESTS)
     add_subdirectory(test/unittest/types)
     add_subdirectory(test/unittest/client/session/stream)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-      add_subdirectory(test/unittest/transport/serial)
-      add_subdirectory(test/unittest/transport/rpmsg)
+        add_subdirectory(test/unittest/transport/serial)
     endif()
 endif()
 

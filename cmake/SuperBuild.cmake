@@ -89,6 +89,66 @@ if(NOT UAGENT_USE_SYSTEM_FASTCDR)
     endif()
 endif()
 
+# Libmetal
+if(UAGENT_USE_LIBMETAL)
+    unset(libmetal_DIR CACHE)
+    find_package(libmetal ${_libmetal_version} EXACT QUIET)
+    if(NOT libmetal_FOUND)
+        ExternalProject_Add(libmetal
+            GIT_REPOSITORY
+                https://github.com/OpenAMP/libmetal.git
+            GIT_TAG
+                ${_libmetal_tag}
+            PREFIX
+                ${PROJECT_BINARY_DIR}/libmetal
+            INSTALL_DIR
+                ${PROJECT_BINARY_DIR}/temp_install/libmetal-${_libmetal_version}
+            CMAKE_CACHE_ARGS
+                -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH};${CMAKE_INSTALL_PREFIX}
+                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                -DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_TOOLCHAIN_FILE}
+                ${CROSS_CMAKE_ARGS}
+            )
+        list(APPEND _deps libmetal)
+    endif()
+endif()
+
+# OpenAMP
+if(UAGENT_USE_OPENAMP)
+    unset(openamp_DIR CACHE)
+    find_package(openamp ${_openamp_version} EXACT QUIET)
+    if(NOT openamp_FOUND)
+        ExternalProject_Add(openamp
+            GIT_REPOSITORY
+                https://github.com/OpenAMP/open-amp.git
+            GIT_TAG
+                ${_openamp_tag}
+            PREFIX
+                ${PROJECT_BINARY_DIR}/openamp
+            INSTALL_DIR
+                ${PROJECT_BINARY_DIR}/temp_install/openamp-${_openamp_version}
+            CMAKE_CACHE_ARGS
+                -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                -DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_TOOLCHAIN_FILE}
+                -DCMAKE_INCLUDE_PATH:PATH=${PROJECT_BINARY_DIR}/temp_install/libmetal-${_libmetal_version}/include
+                -DCMAKE_LIBRARY_PATH:PATH=${PROJECT_BINARY_DIR}/temp_install/libmetal-${_libmetal_version}/lib
+                ${CROSS_CMAKE_ARGS}
+            DEPENDS
+                libmetal
+            )
+        list(APPEND _deps openamp)  
+    endif()
+endif()
+
 if(UAGENT_FAST_PROFILE AND NOT UAGENT_USE_SYSTEM_FASTDDS)
     # Foonathan memory.
     unset(foonathan_memory_DIR CACHE)
